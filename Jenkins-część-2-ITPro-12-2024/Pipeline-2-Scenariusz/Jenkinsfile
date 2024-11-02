@@ -1,0 +1,67 @@
+pipeline {
+    agent any
+
+    environment {
+        INVENTORY = 'inventory.ini'
+        CSV_FILE = 'VLAN.csv'
+    }
+
+    stages {
+        stage('Sprawdź VLAN 30') {
+            steps {
+                script {
+                    try {
+                        // Uruchomienie playbooka do sprawdzenia VLAN 30
+                        def checkResult = ansiblePlaybook(
+                            playbook: 'sprawdz_vlan.yaml',
+                            inventory: "${INVENTORY}",
+                            // Opcjonalnie: ścieżka do pliku ansible.cfg, jeśli nie jest w domyślnej lokalizacji
+                            // extras: '--config ansible.cfg',
+                            failOnError: true  // Zakończ stage jako nieudany w przypadku błędu
+                        )
+
+                        // Jeśli playbook zakończył się sukcesem, ustaw VLAN_CHECK_SUCCESS na 'true'
+                        env.VLAN_EXISTS = 'false'
+                        echo 'VLAN 30 nie istnieje. Można kontynuować tworzenie.'
+                    } catch (Exception e) {
+                        // Playbook zakończył się błędem, co oznacza, że VLAN 30 istnieje
+                        env.VLAN_EXISTS = 'true'
+                        echo 'VLAN 30 już istnieje. Nie będzie tworzony.'
+                        // Opcjonalnie: Możesz ustawić VLAN_CHECK_SUCCESS na 'false', ale domyślnie już jest 'false'
+                    }
+                }
+            }
+        }
+
+        stage('Utwórz VLAN 30, jeśli nie istnieje') {
+            when {
+                expression { return env.VLAN_EXISTS == 'false' }
+            }
+            steps {
+                script {
+                    // Pobranie nazwy VLAN 30 z pliku CSV
+                    def vlanName = sh(
+                        script: "awk -F, 'NR > 1 && \$1 == 30 {print \$2}' ${CSV_FILE}",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Nazwa VLAN 30: ${vlanName}"
+
+                    // Uruchomienie playbooka do tworzenia VLAN 30
+                    ansiblePlaybook(
+                        playbook: 'utworz_vlan.yaml',
+                        inventory: "${INVENTORY}",
+                        extras: "-e vlan_name=${vlanName}"
+                    )
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Wykonanie polecenia echo test niezależnie od wyniku poprzednich zadań
+            sh 'echo test'
+        }
+    }
+}

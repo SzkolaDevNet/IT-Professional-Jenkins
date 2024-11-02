@@ -1,0 +1,12 @@
+services:
+  jenkins:
+    image: my-jenkins:2.462.2
+    ports:
+      - "8443:8443"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    environment:
+      JENKINS_OPTS: "--httpPort=-1 --httpsPort=8443 --httpsKeyStore=/var/jenkins_home/ssl/jenkins_keystore.jks --httpsKeyStorePassword=mypassword"
+
+volumes:
+  jenkins_home:

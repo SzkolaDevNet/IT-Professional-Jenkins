@@ -1,0 +1,17 @@
+services:
+  jenkins:
+    image: my-jenkins:2.462.2
+    volumes:
+      - jenkins_home:/var/jenkins_home
+  tls:
+    image: caddy:2-alpine
+    depends_on:
+      - jenkins
+    volumes:
+      - ./cert.crt:/etc/ssl/private/cert.crt:ro,z
+      - ./key.key:/etc/ssl/private/key.key:ro,z
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - 8443:8443
+volumes:
+  jenkins_home:

@@ -1,0 +1,8 @@
+---
+- name: Playbook do wypisania komunikatu na ekranie
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Wypisz komunikat
+      debug:
+        msg: "Playbook uruchomiony przez Jenkins"
