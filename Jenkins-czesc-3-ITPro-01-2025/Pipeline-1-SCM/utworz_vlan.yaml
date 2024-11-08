@@ -1,0 +1,18 @@
+---
+- name: Tworzenie lub aktualizacja VLAN o vlan_id 30 na przełączniku Cisco IOS
+  hosts: cisco_switches
+  gather_facts: no
+  vars:
+    vlan_id: 30
+  tasks:
+    - name: Utwórz lub zaktualizuj VLAN o vlan_id 30
+      cisco.ios.ios_vlans:
+        config:
+          - vlan_id: "{{ vlan_id }}"
+            name: "{{ vlan_name }}"
+        state: merged
+      register: vlan_creation
+
+    - name: Wyświetl wynik operacji tworzenia VLAN-u
+      debug:
+        var: vlan_creation
