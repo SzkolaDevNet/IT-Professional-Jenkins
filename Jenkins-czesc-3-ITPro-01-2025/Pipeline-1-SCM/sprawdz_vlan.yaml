@@ -1,0 +1,21 @@
+---
+- name: Zbieranie informacji o VLAN-ach z przełącznika Cisco IOS
+  hosts: cisco_switches
+  gather_facts: no
+  tasks:
+    - name: Zbierz informacje o VLAN-ach
+      cisco.ios.ios_vlans:
+        state: gathered
+      register: vlan_info
+
+    - name: Wyświetl zebrane VLAN-y
+      debug:
+        var: vlan_info
+
+    - name: Sprawdź, czy VLAN o vlan_id 30 istnieje
+      vars:
+        vlan_id_to_check: 30
+        found_vlans: "{{ vlan_info.gathered | selectattr('vlan_id', '==', vlan_id_to_check) | list }}"
+      fail:
+        msg: "VLAN o vlan_id {{ vlan_id_to_check }} został znaleziony!"
+      when: found_vlans | length > 0
